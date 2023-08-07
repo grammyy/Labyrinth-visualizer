@@ -1,2 +1,2 @@
-# Labyrinth visualizer
- Starfall music visualizer visually based on youtuber video concept made for GMOD.
+# Credits for visual concept: https://youtu.be/iC452qNLXFg
+# README not done, writing later.
