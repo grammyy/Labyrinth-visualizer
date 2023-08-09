@@ -168,6 +168,18 @@ else
                 "Back In Black",
                 "AC/DC",
                 "4:13"
+            },
+            [24]={
+                "https://cdn.discordapp.com/attachments/1120967741801762919/1138575299177619526/y2mate.is_-_laurindo_almeida___the_lamp_is_low__slowed___reverbed___rain_-XdRyU1JPYC8-128k-1691527696.mp3",
+                "The lamp is low",
+                "Laurindo Almeida",
+                "14:00"
+            },
+            [25]={
+                "https://cdn.discordapp.com/attachments/1120967741801762919/1138669400698920970/YT2mp3.info_-_Out_of_Touch_128kbps.mp3",
+                "Out of touch",
+                "Daryl Hall & John Oates",
+                "4:10"
             }
         },
         scrollOffset=0,
@@ -213,6 +225,18 @@ else
             callBack,
             true
         }
+    end
+    
+    function numPanel(offset,var,max,min)
+        render.setColor(Color(0,0,0))
+        render.drawRect(21,25+offset,140,12)
+        render.setColor(Color(150,150,150,data.playlist))
+        render.drawRectOutline(21,25+offset,140,12,1)
+        render.drawText(34,24+offset,"+"..max,1)
+        render.drawText(34+24,24+offset,"+"..min,1)
+        render.drawText(24+70,24+offset,var,1)
+        render.drawText(34+94,24+offset,"-"..min,1)
+        render.drawText(34+116,24+offset,"-"..max,1)
     end
     
     function sync(time)
@@ -283,7 +307,7 @@ else
 
             for ii=0, data.scale do
                 
-                render.setColor(data.rgb and Color(timer.realtime()*20,1,n/100):hsvToRGB() or Color(n,n,n))
+                render.setColor(data.rgb and Color(timer.realtime()*80-i*20,1,n/100):hsvToRGB() or Color(n,n,n))
                 
                 if ii>0 then
                     render.draw3DLine(Vector((ii-1)*10.2/1.28*64/data.scale/data.srcx,512-i*20-(iterator[i][ii-1] or 0)*data.mag-40-(data.timeline/3-60),(i-1)*50),Vector(ii*10.2/1.28*64/data.scale/data.srcx,512-i*20-(iterator[i][ii] or 0)*data.mag-40-(data.timeline/3-60),(i-1)*50))
@@ -292,7 +316,7 @@ else
                 if data.extra and iterator[i+1] then
                     local m=math.clamp(70-(70/data.lines)*i-25,0,70)
                     
-                    render.setColor(data.rgb and Color(timer.realtime()*20,1,m/100):hsvToRGB() or Color(m,m,m))
+                    render.setColor(data.rgb and Color(timer.realtime()*80-i*20,1,m/100):hsvToRGB() or Color(m,m,m))
                     render.draw3DLine(Vector(ii*10.2/1.28*64/data.scale/data.srcx,512-i*20-(iterator[i][ii] or 0)*data.mag-40-(data.timeline/3-60),(i-1)*50),Vector(ii*10.2/1.28*64/data.scale/data.srcx,512-i*20-(iterator[math.clamp(i+1,1,data.lines)][ii] or 0)*data.mag-60-(data.timeline/3-60),(i-1)*50+50))
                 end
             end
@@ -319,7 +343,7 @@ else
                 --render.drawText(20,25+(i-1)*20,data.songs[i][3],3)
                 render.drawText(80,25+(i-1)*20,string.sub(data.songs[i+data.scrollOffset][2],1,21),3)
                 
-                drawHitbox(4+i,20.5,25+(i-1)*20,181,13,function()
+                drawHitbox(10+i,20.5,25+(i-1)*20,181,13,function()
                     net.start("sv_song")
                     net.writeTable(data.songs[i+data.scrollOffset])
                     net.send()
@@ -334,7 +358,8 @@ else
             
             render.drawRectOutline(4.5,25,12,12,1)
             render.drawText(7.75,24,"E")
-            drawHitbox(4+#data.songs+1,4.5,25,12,12,function()
+            
+            drawHitbox(10+#data.songs+1,4.5,25,12,12,function()
                 data.extra=not data.extra
                 sync()
             end,function()
@@ -353,7 +378,8 @@ else
             
             render.drawRectOutline(4.5,25+21,12,12,1)
             render.drawText(7.75,24+21,"R")
-            drawHitbox(4+#data.songs+2,4.5,25+21,12,12,function()
+            
+            drawHitbox(10+#data.songs+2,4.5,25+21,12,12,function()
                 data.rgb=not data.rgb
                 sync()
             end,function()
@@ -372,7 +398,8 @@ else
             
             render.drawRectOutline(4.5,25+42,12,12,1)
             render.drawText(7.75,24+42,"D")
-            drawHitbox(4+#data.songs+3,4.5,25+42,12,12,function()
+            
+            drawHitbox(10+#data.songs+3,4.5,25+42,12,12,function()
                 debugging=not debugging
                 sync()
             end,function()
@@ -383,45 +410,100 @@ else
                 render.drawText(24,24+42,"Enable debugging.")
             end)
             
-            render.setColor(Color(100,100,100,data.playlist))
-            render.drawRectOutline(4.5,25+84,12,12,1)
-            render.drawText(7.75,24+84,"L")
+            if !data.linePanel then
+                render.setColor(Color(100,100,100,data.playlist))
+            else
+                render.setColor(Color(150,150,150,data.playlist))
+            end
             
-            drawHitbox(4+#data.songs+4,4.5,25+84,12,12,nil,function()
+            render.drawRectOutline(4.5,25+81,12,12,1)
+            render.drawText(7.75,24+81,"L")
+            
+            drawHitbox(10+#data.songs+4,4.5,25+81,12,12,function()
+                if Vector(x,y):withinAABox(Vector(4.5,25+81),Vector(4.5+12,25+81+12)) then
+                    data.linePanel=not data.linePanel
+                end
+            end,function()
                 render.setColor(Color(0,0,0))
-                render.drawRect(21,25+84,140,12)
-                render.setColor(Color(150,150,150))
-                render.drawRectOutline(21,25+84,140,12,1)
-                render.drawText(28,24+84,"+10")
-                render.drawText(28+26,24+84,"+1")
-                render.drawText(24+70,24+84,"Lines: "..data.lines,1)
-                render.drawText(19+103,24+84,"-1")
-                render.drawText(19+118,24+84,"-10")
+                render.drawRect(21,25+81,140,12)
+                render.setColor(Color(150,150,150,data.playlist))
+                render.drawRectOutline(21,25+81,140,12,1)
+                render.drawText(24,24+81,"Shows panel for line control.")
             end)
             
-            if hitboxes[4+#data.songs+4][4] then
-                hitboxes[4+#data.songs+4][2]=Vector(4.5+157,25+84+12)
-                
-                drawHitbox(1,28,24+85,20,12,function()
+            if data.linePanel then
+                numPanel(81,"Lines: "..data.lines,10,1)
+            
+                drawHitbox(1,28,24+80,20,16,function()
                     data.lines=data.lines+10
                 end)
-                drawHitbox(2,28+23,24+85,20,12,function()
+                
+                drawHitbox(2,28+23,24+80,20,16,function()
                     data.lines=data.lines+1
                 end)
-                drawHitbox(3,19+99,24+85,20,12,function()
+                
+                drawHitbox(3,19+99,24+80,20,16,function()
                     data.lines=data.lines-1
                 end)
-                drawHitbox(4,19+115,24+85,20,12,function()
+                
+                drawHitbox(4,19+115,24+80,20,16,function()
                     data.lines=data.lines-10
                 end)
                 
                 data.lines=math.max(data.lines,0)
             else
-                hitboxes[4+#data.songs+4][2]=Vector(4.5+12,25+84+12)
                 hitboxes[1]=nil
                 hitboxes[2]=nil
                 hitboxes[3]=nil
                 hitboxes[4]=nil
+            end
+            
+            if !data.scalePanel then
+                render.setColor(Color(100,100,100,data.playlist))
+            else
+                render.setColor(Color(150,150,150,data.playlist))
+            end
+            
+            render.drawRectOutline(4.5,25+101,12,12,1)
+            render.drawText(7.75,24+101,"S")
+            
+            drawHitbox(10+#data.songs+5,4.5,25+101,12,12,function()
+                if Vector(x,y):withinAABox(Vector(4.5,25+101),Vector(4.5+12,25+101+12)) then
+                    data.scalePanel=not data.scalePanel
+                end
+            end,function()
+                render.setColor(Color(0,0,0))
+                render.drawRect(21,25+101,140,12)
+                render.setColor(Color(150,150,150,data.playlist))
+                render.drawRectOutline(21,25+101,140,12,1)
+                render.drawText(24,24+101,"Shows panel for scaling.")
+            end)
+            
+            if data.scalePanel then
+                numPanel(101,"Scale: "..data.scale,32,16)
+            
+                drawHitbox(5,28,24+100,20,16,function()
+                    data.scale=data.scale+32
+                end)
+                
+                drawHitbox(6,28+23,24+100,20,16,function()
+                    data.scale=data.scale+16
+                end)
+                
+                drawHitbox(7,19+99,24+100,20,16,function()
+                    data.scale=data.scale-16
+                end)
+                
+                drawHitbox(8,19+115,24+100,20,16,function()
+                    data.scale=data.scale-32
+                end)
+                
+                data.scale=math.max(data.scale,0)
+            else
+                hitboxes[5]=nil
+                hitboxes[6]=nil
+                hitboxes[7]=nil
+                hitboxes[8]=nil
             end
         end
         
@@ -429,8 +511,9 @@ else
         
         if data.timeline>0 then
             render.setColor(Color(100,100,100,data.timeline))
-            render.drawLine(100,470,512/data.srcx-100,470)
-            drawHitbox(4+#data.songs+5,100,462.5,512/data.srcx-200,15,function()
+            render.drawLine(100,450,512/data.srcx-100,450)
+            
+            drawHitbox(10+#data.songs+6,100,442.5,512/data.srcx-200,15,function()
                 if data.snd then
                     sync(data.length*((1000/(512/data.srcx-200))*(x-100)/(512/data.srcx)))
                 end
@@ -439,7 +522,7 @@ else
             local lapsed=math.max((data.time*(100/data.length)/(100/(512/data.srcx-200))),0)
             
             render.setColor(Color(150,150,150,data.timeline))
-            render.drawRect(100+lapsed,470-7.5,2,15)
+            render.drawRect(100+lapsed,450-7.5,2,15)
         end
         
         if data.requestedBy then
