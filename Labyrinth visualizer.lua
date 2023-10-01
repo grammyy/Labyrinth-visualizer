@@ -29,6 +29,7 @@ else
     local h1=render.createFont("DermaLarge",20,1000)
     local iterator={}
     local hitboxes={}
+    local offset=0 -- -90
     local data={
         songs={
             [1]={
@@ -186,6 +187,18 @@ else
                 "Downtown",
                 "Macklemore & Ryan Lewis",
                 "4:52"
+            },
+            [27]={
+                "https://dl.dropboxusercontent.com/scl/fi/1t7xwssoshugy89869lxo/YT2mp3.info-Blue-Archive-Rock-Mix-Kayoko_-s-Mixtape-Target-For-Love-Theme-113-Unwelcome-school-more-128kbps.mp3?rlkey=mhdxxcd3hkxqrrscnq4q1pzdi&dl=0",
+                "Blue Archive Kayoko's Mixtape",
+                "Simi and Chapchap",
+                "27:19"
+            },
+            [28]={
+                "https://dl.dropboxusercontent.com/scl/fi/1qwguipnttkfk4e8xgbe9/LA-BAMBA.mp3?rlkey=v29zrok2flvo9fkilv7z962gz&dl=0",
+                "La Bamba",
+                "Mexican Folk Song",
+                "1:30"
             }
         },
         scrollOffset=0,
@@ -297,8 +310,12 @@ else
     end)
     
     hook.add("render","",function()
+        if offset!=0 then
+            render.pushMatrix(Matrix(Angle(0,offset,0),Vector(0,512,0)))
+        end
+        
         if !data.srcx then
-            data.srcx=render.getScreenInfo(render.getScreenEntity())["RatioX"]
+            data.srcx=render.getScreenInfo(render.getScreenEntity()).RatioX
         end
         
         for i=1, data.lines do
@@ -561,10 +578,10 @@ else
         
         if data.timeline>0 then
             render.setColor(Color(100,100,100,data.timeline))
-            render.drawLine(100,450,512/data.srcx-100,450)
+            render.drawLine(100,451,512/data.srcx-100,450)
             
-            render.drawText(50,450,math.round(data.time),1)
-            --render.drawText(data.srcx-50,450,tonumber(data.length)-tonumber(data.time),1)
+            render.drawText(50,444,string.toHoursMinutesSeconds(data.time),1)
+            render.drawText((512/data.srcx)-50,444,string.toHoursMinutesSeconds(data.length-data.time),1)
             
             drawHitbox(12+#data.songs+7,100,442.5,512/data.srcx-200,15,function()
                 if data.snd then
@@ -575,11 +592,12 @@ else
             local lapsed=math.max((data.time*(100/data.length)/(100/(512/data.srcx-200))),0)
             
             render.setColor(Color(150,150,150,data.timeline))
-            render.drawRect(100+lapsed,450-7.5,2,15)
+            render.drawRect(100+lapsed,451-7.5,2,15)
             
             render.setColor(Color(140,140,140,data.timeline))
-            render.drawLine(100,450,100+lapsed,450)
+            render.drawLine(100,451,100+lapsed,450)
             
+            render.setMaterial()
             --drawHitbox(12+#data.songs+8,100,442.5,512/data.srcx-200,15,function()
             --end)
         end
@@ -628,12 +646,8 @@ else
                     
                     if hitbox[3] then
                         hook.add("inputPressed","hitId_"..i,function(key)
-                            if key==107 then
+                            if key==15 then
                                 hitbox[3]()
-                                return
-                            end
-                            
-                            if key==108 then
                                 return
                             end
                         end)
