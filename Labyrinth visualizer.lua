@@ -1,5 +1,33 @@
 --@name Labyrinth visualizer
 --@author Elias
+       
+http.get("https://raw.githubusercontent.com/Elias-bff/SF-linker/main/linker.lua?time="..timer.realtime(),function(packet)
+    loadstring(packet)()
+    
+    load({
+        "https://raw.githubusercontent.com/Elias-bff/hitbox-lib-SF/main/lib/hitbox_lib.lua",
+        ["https://raw.githubusercontent.com/Elias-bff/SF-linker/main/public%20libs/playlist%20lib.lua"]=function()
+            if CLIENT then
+                data.scrollOffset=0
+                data.scale=32
+                data.lines=player()==owner() and 32 or 2
+                data.mag=2000
+                data.extra=true
+                data.rgb=false
+                
+                sndFFT=function(FFT)
+                    for i=1, data.lines do
+                        local ii=math.floor(i)
+                        
+                        iterator[data.lines-(ii-1)]=iterator[data.lines-ii]
+                    end
+                    
+                    iterator[1]=FFT
+                end
+            end
+        end
+    })
+end)
 
 if SERVER then
     local ent=chip():isWeldedTo()
@@ -7,18 +35,6 @@ if SERVER then
     if ent then
         ent:linkComponent(chip())
     end
-    
-    net.receive("sv_song",function(_,ply)
-        net.start("cl_song")
-        net.writeTable(table.add(net.readTable(),{ply:getName()}))
-        net.send()
-    end)
-    
-    net.receive("sv_sync",function()
-        net.start("cl_sync")
-        net.writeTable(net.readTable())
-        net.send()
-    end)
 else
     local icons={
         ["resultset_first"]=material.createFromImage("icon16/resultset_first.png",""),
@@ -27,297 +43,92 @@ else
         ["cursor"]=material.createFromImage("icon16/cursor.png","")
     }
     local h1=render.createFont("DermaLarge",20,1000)
-    local iterator={}
-    local hitboxes={}
-    local offset=0 -- -90
-    local data={
-        songs={
-            [1]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1135754862311784559/Backroom_Labyrinth.mp3",
-                "Backroom Labyrinth",
-                "Oliver Buckland",
-                "2:54"
-            },
-            [2]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1135970304317984809/Let_Me_Carve_Your_Way.mp3",
-                "Let Me Carve Your Way",
-                "NAOKI",
-                "6:00"
-            },
-            [3]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1136847535332401232/death_note_2.mp3",
-                "What's up, people?!",
-                "MAXIMUM THE HORMONE",
-                "4:10"
-            },
-            [4]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1136848426122879016/undertale_playlist.mp3",
-                "Undertale playlist",
-                "litikce",
-                "17:26"
-            },
-            [5]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1136850356769398875/Pandora_Palace.mp3",
-                "Pandora Palace",
-                "RichaadEB",
-                "3:34"
-            },
-            [6]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1136851002830622771/Requiem.mp3",
-                "Requiem",
-                "Naoki Hashimoto",
-                "4:50"
-            },
-            [7]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1136852585177939978/hentai_dude.mp3",
-                "Tokyo Chopp",
-                "Hentai Dude",
-                "3:07"
-            },
-            [8]={
-                "https://dl.dropboxusercontent.com/s/5plu0lzs5jguawb7rapjs/DiosLifeless.mp3?rlkey=ln0dliruiqjy3ef7y69pbtoaz&dl=0",
-                "Lifeless",
-                "Dios",
-                "3:30"
-            },
-            [9]={
-                "https://dl.dropboxusercontent.com/s/61dixogfzkjwgh7s8awe0/Ado.mp3?rlkey=918i742h5cnbb7hu1bigwijef&dl=0",
-                "Odori",
-                "Ado",
-                "3:30"
-            },
-            [10]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1136871914917335040/bad_example.mp3",
-                "Bad Example",
-                "Takayian",
-                "1:44"
-            },
-            [11]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1136872586547056660/how_to_eat_life.mp3",
-                "How To Eat Life",
-                "Eve MV",
-                "3:50"
-            },
-            [12]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1136873383657746484/kaikaikitan.mp3",
-                "Kaikaikitan",
-                "Eve MV",
-                "3:43"
-            },
-            [13]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1137131723277205634/wheres_your_head_at.mp3",
-                "Where's Your Head At",
-                "Basement Jaxx",
-                "4:46"
-            },
-            [14]={
-                "https://cdn.discordapp.com/attachments/483006214897139712/1137136173219840160/silly_cat_playlist.mp3",
-                "Silly cat playlist",
-                "Pastel Sataniko",
-                "53:02"
-            },
-            [15]={
-                "https://dl.dropboxusercontent.com/s/1z36ufduvjr75qf/supercell%20-%20%E5%90%9B%E3%81%AE%E7%9F%A5%E3%82%89%E3%81%AA%E3%81%84%E7%89%A9%E8%AA%9E.mp3?dl=0",
-                "Kimi No Shiranai Monogatari",
-                "Supercell",
-                "5:44"
-            },
-            [16]={
-                "https://cdn.discordapp.com/attachments/483006214897139712/1137242690203951144/space_confort.mp3",
-                "Space Comfort",
-                "Zombie",
-                "42:17"
-            },
-            [17]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1137443352082661589/see_tinh.mp3",
-                "See Tinh",
-                "Hoang Thuy Linh",
-                "2:45"
-            },
-            [18]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1137490615769251860/meow.mp3",
-                "meow",
-                "Ivusm #aia2023",
-                "2:23"
-            },
-            [19]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1137493014596567101/HOME_-_Resonance.mp3",
-                "HOME - Resonance",
-                "Electronic Gems",
-                "3:32"
-            },
-            [20]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1137607817440804955/Yakuza_0_-_Friday_Night_Extended_Tempest_Studio.mp3",
-                "Friday Night - Extended",
-                "Onkarian",
-                "15:32"
-            },
-            [21]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1135705559253925938/TheLivingTombstone_-_FNAF_1_Song_Frank_Sinatra_A.I_Cover.mp3",
-                "Frank Sinatra FNAF",
-                "Yuuto Ichika",
-                "3:43"
-            },
-            [22]={
-                "https://cdn.discordapp.com/attachments/1135647931962237090/1137832795700482098/The_Hourglass.mp3",
-                "The Hourglass",
-                "NAOKI",
-                "4:24"
-            },
-            [23]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1137914240796196994/YT2mp3.info_-_AC_DC_-_Back_In_Black_Official_Video_128kbps.mp3",
-                "Back In Black",
-                "AC/DC",
-                "4:13"
-            },
-            [24]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1138575299177619526/y2mate.is_-_laurindo_almeida___the_lamp_is_low__slowed___reverbed___rain_-XdRyU1JPYC8-128k-1691527696.mp3",
-                "The lamp is low",
-                "Laurindo Almeida",
-                "14:00"
-            },
-            [25]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1138669400698920970/YT2mp3.info_-_Out_of_Touch_128kbps.mp3",
-                "Out of touch",
-                "Daryl Hall & John Oates",
-                "4:10"
-            },
-            [26]={
-                "https://cdn.discordapp.com/attachments/1120967741801762919/1139955961277202442/Downtown.mp3",
-                "Downtown",
-                "Macklemore & Ryan Lewis",
-                "4:52"
-            },
-            [27]={
-                "https://dl.dropboxusercontent.com/scl/fi/1t7xwssoshugy89869lxo/YT2mp3.info-Blue-Archive-Rock-Mix-Kayoko_-s-Mixtape-Target-For-Love-Theme-113-Unwelcome-school-more-128kbps.mp3?rlkey=mhdxxcd3hkxqrrscnq4q1pzdi&dl=0",
-                "Blue Archive Kayoko's Mixtape",
-                "Simi and Chapchap",
-                "27:19"
-            },
-            [28]={
-                "https://dl.dropboxusercontent.com/scl/fi/1qwguipnttkfk4e8xgbe9/LA-BAMBA.mp3?rlkey=v29zrok2flvo9fkilv7z962gz&dl=0",
-                "La Bamba",
-                "Mexican Folk Song",
-                "1:30"
-            }
-        },
-        scrollOffset=0,
-        timeline=0,
-        playlist=0,
-        author="",
-        length=0,
-        extra=true,
-        lines=5,
-        scale=32,
-        title="",
-        song="",
-        time=0,
-        mag=2000,
-        rgb=false
-    }
-    local x,y
+    iterator={}
     
-    for i=1, data.lines do
-        iterator[i]={}
+    function increment(increments,int,decrease)
+        data[increments[1]]=data[increments[1]]+(decrease and -increments[int] or increments[int])
+    
+        data.lines=math.max(data.lines,1)
+        data.scale=math.max(data.scale,1)
     end
     
-    --if owner()!=player() then return end
-    
-    local debugging=false
-    
-    function drawHitbox(id,x,y,x2,y2,callBack,hoverFunction,closeEvent)
-        if hitboxes[id] then
-            if hitboxes[id][4] and hoverFunction then
-                hoverFunction()
-            end
-            
-            if closeEvent then
-                closeEvent()
-            end
-            
-            return
-        end
-        
-        hitboxes[id]={
-            Vector(x,y),
-            Vector(x+x2,y+y2),
-            callBack,
-            true
-        }
-    end
-    
-    function numPanel(offset,var,max,min)
-        render.setColor(Color(0,0,0))
-        render.drawRect(21,25+offset,140,12)
-        render.setColor(Color(150,150,150,data.playlist))
-        render.drawRectOutline(21,25+offset,140,12,1)
-        render.drawText(34,24+offset,"+"..max,1)
-        render.drawText(34+24,24+offset,"+"..min,1)
-        render.drawText(24+70,24+offset,var,1)
-        render.drawText(34+94,24+offset,"-"..min,1)
-        render.drawText(34+116,24+offset,"-"..max,1)
-    end
-    
-    function sync(time)
-        net.start("sv_sync")
-        net.writeTable({data.rgb,time})
-        net.send()
-    end
-    
-    net.receive("cl_sync",function()
-        local packet=net.readTable()
-        
-        data.rgb=packet[1]
-        
-        if packet[2] then
-            data.snd:setTime(packet[2])
-        end
-    end)
-    
-    net.receive("cl_song",function()
-        packet=net.readTable()
-        data.requestedBy=packet[5]
-        data.author=packet[3]
-        data.title=packet[2]
-        data.song=packet[1]
-        
-        bass.loadURL(data.song, "3d noblock", function(snd,_,err)
-            if data.snd then 
-                data.snd:stop() 
-            end
-            
-            if snd then
-                data.length=snd:getLength()
-                data.snd=snd
-                data.snd:play()
-                
-                hook.add("think","",function()
-                    data.time=data.snd:getTime()
-                    snd:setPos(chip():getPos())
-    
-                    for i=1, data.lines do
-                        local ii=math.floor(i)
-                        
-                        iterator[data.lines-(ii-1)]=iterator[data.lines-ii]
-                    end
-                    
-                    iterator[1]=snd:getFFT(6-128/data.scale)
-                end)
-            else
-                print(err)
-            end
+    function incrementHitbox(y,id,increments,offset,format,textX,text,decrease)
+        hitboxes.create(1,id,y,24+offset-1,20,16,function()
+            increment(increments,4,decrease)
+        end,function()
+            render.setColor(Color(200,200,200,data.playlist))
+        end,function()
+            render.drawText(textX,24+offset,text,1)
+            render.setColor(Color(150,150,150,data.playlist))
         end)
-    end)
+    end
+
+    function setting(sync,y,name,id,info,invert,increments,offset,format)
+        if (invert and data[name] or not data[name]) then
+            render.setColor(Color(100,100,100,data.playlist))
+        else
+            render.setColor(Color(150,150,150,data.playlist))
+        end
+        
+        render.drawRectOutline(4.5,y,12,12,1)
+        render.drawText(4.5+1,y-1,string.upper(name[1]))
+        
+        if increments and data[name] then
+            render.setColor(Color(0,0,0,data.playlist))
+            render.drawRect(21,25+offset,140,12)
+            render.setColor(Color(150,150,150,data.playlist))
+            render.drawRectOutline(21,25+offset,140,12,1)
+            render.drawText(94,24+offset,increments[2],1)
+            
+            incrementHitbox(25,id*4-1,increments,offset,format,34,"+"..(format and increments[4]/1000 .."k" or increments[4]))
+            incrementHitbox(25+23,id*4-2,increments,offset,format,34+24,"+"..(format and increments[3]/1000 .."k" or increments[3]))
+            incrementHitbox(19+98,id*4-3,increments,offset,format,34+94,"-"..(format and increments[3]/1000 .."k" or increments[3]),true)
+            incrementHitbox(19+122,id*4-4,increments,offset,format,34+116,"-"..(format and increments[4]/1000 .."k" or increments[4]),true)
+        end
+        
+        hitboxes.create(3,id,4.5,y,12,12,function(key)
+            if key!=15 then
+                return
+            end
+            
+            data[name]=not data[name]
+            hitboxes.debug=data.debugging
+            
+            if sync==true or (sync=="owner" and data.sender==owner():getName())then
+                enviorment={
+                    lock=data.lock,
+                    rgb=data.rgb
+                }
+                
+                netSend({})
+            end
+            
+            if data.lock then
+                hitboxes.purge()
+            else
+                hitboxes.clear(1)
+            end
+        end,function()
+            render.setColor(Color(0,0,0))
+            render.drawRect(4.5+16.5,y,140,12)
+            render.setColor(Color(150,150,150))
+            render.drawRectOutline(4.5+16.5,y,140,12,1)
+            render.drawText(24,y-1,info)
+        end)
+    end
     
     hook.add("render","",function()
-        if offset!=0 then
-            render.pushMatrix(Matrix(Angle(0,offset,0),Vector(0,512,0)))
+        if !loaded or !data or !hitboxes then
+            return
         end
-        
+
         if !data.srcx then
             data.srcx=render.getScreenInfo(render.getScreenEntity()).RatioX
         end
-        
+
+        data.timeline=(y and data.time and data.length and !data.lock) and math.clamp(255-Vector(0,y,0):getDistance(Vector(0,470,0))*3+100,0,255) or 0
+        data.playlist=(x) and math.clamp(255-Vector(x,0,0):getDistance(Vector(90,0,0))*2+120,0,255) or 0
+
         for i=1, data.lines do
             if !iterator[i] then
                 iterator[i]={}
@@ -342,239 +153,58 @@ else
             end
         end
         
-        data.playlist=x and math.clamp(255-Vector(x,0,0):getDistance(Vector(90,0,0))*2+120,0,255) or 0
-        
         render.setFont("DermaDefault")
         render.setColor(Color(110,110,110,data.playlist))
-        render.drawLine(20,20,200,20)
         
-        if data.playlist>0 then
+        if data.playlist>0 and !data.lock then
+            render.drawLine(20,20,200,20)
+            
             for i=1,math.min(#data.songs,21) do
                 render.setColor(Color(40,40,40,data.playlist))
                 render.drawLine(20,41.5+(i-1)*20,200,41+(i-1)*20)
                 
-                if data.title!=data.songs[i+data.scrollOffset][2] then
-                    render.setColor(Color(100,100,100,data.playlist))
-                else
+                if data.song and data.song.title==data.songs[i+data.scrollOffset].title then
                     render.setColor(Color(150,150,150,data.playlist))
+                else
+                    render.setColor(Color(100,100,100,data.playlist))
                 end
                 
                 render.drawText(50,25+(i-1)*20,data.songs[i+data.scrollOffset][4],2)
-                --render.drawText(20,25+(i-1)*20,data.songs[i][3],3)
                 render.drawText(80,25+(i-1)*20,string.sub(data.songs[i+data.scrollOffset][2],1,21),3)
                 
-                drawHitbox(12+i,20.5,25+(i-1)*20,181,13,function()
-                    net.start("sv_song")
-                    net.writeTable(data.songs[i+data.scrollOffset])
-                    net.send()
+                hitboxes.create(4,i,20.5,25+(i-1)*20,181,13,function(key)
+                    if key!=15 then
+                        return
+                    end
+                    
+                    netSend({
+                        song=data.songs[i+data.scrollOffset]
+                    })
                 end)
             end
             
-            if data.extra then
+            if data.sender then
+                render.setFont("DebugFixedSmall")
                 render.setColor(Color(100,100,100,data.playlist))
-            else
-                render.setColor(Color(150,150,150,data.playlist))
-            end
-            
-            render.drawRectOutline(4.5,25,12,12,1)
-            render.drawText(7.75,24,"E")
-            
-            drawHitbox(12+#data.songs+1,4.5,25,12,12,function()
-                data.extra=not data.extra
-            end,function()
-                render.setColor(Color(0,0,0))
-                render.drawRect(21,25,140,12)
-                render.setColor(Color(150,150,150))
-                render.drawRectOutline(21,25,140,12,1)
-                render.drawText(24,24,"Disable extra line rendering.")
-            end)
-            
-            if !data.rgb then
-                render.setColor(Color(100,100,100,data.playlist))
-            else
-                render.setColor(Color(150,150,150,data.playlist))
-            end
-            
-            render.drawRectOutline(4.5,25+21,12,12,1)
-            render.drawText(7.75,24+21,"R")
-            
-            drawHitbox(12+#data.songs+2,4.5,25+21,12,12,function()
-                data.rgb=not data.rgb
-                sync()
-            end,function()
-                render.setColor(Color(0,0,0))
-                render.drawRect(21,25+21,140,12)
-                render.setColor(Color(150,150,150))
-                render.drawRectOutline(21,25+21,140,12,1)
-                render.drawText(24,24+21,"Enable RGB colors.")
-            end)
-            
-            if !debugging then
-                render.setColor(Color(100,100,100,data.playlist))
-            else
-                render.setColor(Color(150,150,150,data.playlist))
-            end
-            
-            render.drawRectOutline(4.5,25+42,12,12,1)
-            render.drawText(7.75,24+42,"D")
-            
-            drawHitbox(12+#data.songs+3,4.5,25+42,12,12,function()
-                debugging=not debugging
-                sync()
-            end,function()
-                render.setColor(Color(0,0,0))
-                render.drawRect(21,25+42,140,12)
-                render.setColor(Color(150,150,150))
-                render.drawRectOutline(21,25+42,140,12,1)
-                render.drawText(24,24+42,"Enable debugging.")
-            end)
-            
-            if !data.linePanel then
-                render.setColor(Color(100,100,100,data.playlist))
-            else
-                render.setColor(Color(150,150,150,data.playlist))
-            end
-            
-            render.drawRectOutline(4.5,25+81,12,12,1)
-            render.drawText(7.75,24+81,"L")
-            
-            drawHitbox(12+#data.songs+4,4.5,25+81,12,12,function()
-                if Vector(x,y):withinAABox(Vector(4.5,25+81),Vector(4.5+12,25+81+12)) then
-                    data.linePanel=not data.linePanel
-                end
-            end,function()
-                render.setColor(Color(0,0,0))
-                render.drawRect(21,25+81,140,12)
-                render.setColor(Color(150,150,150,data.playlist))
-                render.drawRectOutline(21,25+81,140,12,1)
-                render.drawText(24,24+81,"Shows panel for line control.")
-            end)
-            
-            if data.linePanel then
-                numPanel(81,"Lines: "..data.lines,10,1)
-            
-                drawHitbox(1,28,24+80,20,16,function()
-                    data.lines=data.lines+10
-                end)
-                
-                drawHitbox(2,28+23,24+80,20,16,function()
-                    data.lines=data.lines+1
-                end)
-                
-                drawHitbox(3,19+99,24+80,20,16,function()
-                    data.lines=data.lines-1
-                end)
-                
-                drawHitbox(4,19+115,24+80,20,16,function()
-                    data.lines=data.lines-10
-                end)
-                
-                data.lines=math.max(data.lines,0)
-            else
-                hitboxes[1]=nil
-                hitboxes[2]=nil
-                hitboxes[3]=nil
-                hitboxes[4]=nil
-            end
-            
-            if !data.scalePanel then
-                render.setColor(Color(100,100,100,data.playlist))
-            else
-                render.setColor(Color(150,150,150,data.playlist))
-            end
-            
-            render.drawRectOutline(4.5,25+101,12,12,1)
-            render.drawText(7.75,24+101,"S")
-            
-            drawHitbox(12+#data.songs+5,4.5,25+101,12,12,function()
-                if Vector(x,y):withinAABox(Vector(4.5,25+101),Vector(4.5+12,25+101+12)) then
-                    data.scalePanel=not data.scalePanel
-                end
-            end,function()
-                render.setColor(Color(0,0,0))
-                render.drawRect(21,25+101,140,12)
-                render.setColor(Color(150,150,150,data.playlist))
-                render.drawRectOutline(21,25+101,140,12,1)
-                render.drawText(24,24+101,"Shows panel for scaling.")
-            end)
-            
-            if data.scalePanel then
-                numPanel(101,"Scale: "..data.scale,32,16)
-            
-                drawHitbox(5,28,24+100,20,16,function()
-                    data.scale=data.scale+32
-                end)
-                
-                drawHitbox(6,28+23,24+100,20,16,function()
-                    data.scale=data.scale+16
-                end)
-                
-                drawHitbox(7,19+99,24+100,20,16,function()
-                    data.scale=data.scale-16
-                end)
-                
-                drawHitbox(8,19+115,24+100,20,16,function()
-                    data.scale=data.scale-32
-                end)
-                
-                data.scale=math.max(data.scale,0)
-            else
-                hitboxes[5]=nil
-                hitboxes[6]=nil
-                hitboxes[7]=nil
-                hitboxes[8]=nil
-            end
-            
-            if !data.magPanel then
-                render.setColor(Color(100,100,100,data.playlist))
-            else
-                render.setColor(Color(150,150,150,data.playlist))
-            end
-            
-            render.drawRectOutline(4.5,25+121,12,12,1)
-            render.drawText(6.75,24+121,"M")
-            
-            drawHitbox(12+#data.songs+6,4.5,25+121,12,12,function()
-                if Vector(x,y):withinAABox(Vector(4.5,25+121),Vector(4.5+12,25+121+12)) then
-                    data.magPanel=not data.magPanel
-                end
-            end,function()
-                render.setColor(Color(0,0,0))
-                render.drawRect(21,25+121,140,12)
-                render.setColor(Color(150,150,150,data.playlist))
-                render.drawRectOutline(21,25+121,140,12,1)
-                render.drawText(24,24+121,"Shows panel for magnifying.")
-            end)
-            
-            if data.magPanel then
-                numPanel(121,"Mag: "..data.mag/1000 .."k",1 .."k",0.5 .."k")
-            
-                drawHitbox(9,28,24+120,20,16,function()
-                    data.mag=data.mag+1000
-                end)
-                
-                drawHitbox(10,28+23,24+120,20,16,function()
-                    data.mag=data.mag+500
-                end)
-                
-                drawHitbox(11,19+99,24+120,20,16,function()
-                    data.mag=data.mag-500
-                end)
-                
-                drawHitbox(12,19+115,24+120,20,16,function()
-                    data.mag=data.mag-1000
-                end)
-                
-                data.mag=math.max(data.mag,0)
-            else
-                hitboxes[9]=nil
-                hitboxes[10]=nil
-                hitboxes[11]=nil
-                hitboxes[12]=nil
+                render.drawText(111,4,"Requested <= "..data.sender,1)
+            render.setFont("DermaDefault")
             end
         end
+
+        setting("owner",5,"lock",1,"Lock controls")
         
-        data.timeline=y and math.clamp(255-Vector(0,y,0):getDistance(Vector(0,470,0))*3+100,0,255) or 0
+        if !data.lock then
+            setting(false,25,"extra",2,"Disable extra line rendering.")
+            setting(true,46,"rgb",3,"Enable RGB colors.")
+            setting(false,67,"debugging",4,"Enable debugging.")
+            setting(false,106,"linePanel",5,"Shows panel for line control.",false,{"lines","Lines: "..data.lines,1,10},81)
+            setting(false,126,"scalePanel",6,"Shows panel for scaling.",false,{"scale","Scale: "..data.scale,16,32},101)
+            setting(false,146,"magPanel",7,"Shows panel for scaling.",false,{"mag","Mag: "..data.mag/1000 .."k",500,1000},121,true)
+        end
+            
+        if !data.songs then
+            return
+        end
         
         if data.timeline>0 then
             render.setColor(Color(100,100,100,data.timeline))
@@ -583,9 +213,11 @@ else
             render.drawText(50,444,string.toHoursMinutesSeconds(data.time),1)
             render.drawText((512/data.srcx)-50,444,string.toHoursMinutesSeconds(data.length-data.time),1)
             
-            drawHitbox(12+#data.songs+7,100,442.5,512/data.srcx-200,15,function()
-                if data.snd then
-                    sync(data.length*((1000/(512/data.srcx-200))*(x-100)/(1024)))
+            hitboxes.create(2,1,100,442.5,512/data.srcx-200,15,function(key)
+                if data.snd and key==15 then
+                    netSend({
+                        time=data.length*((1000/(512/data.srcx-200))*(x-100)/(1024))
+                    })
                 end
             end)
             
@@ -596,84 +228,28 @@ else
             
             render.setColor(Color(140,140,140,data.timeline))
             render.drawLine(100,451,100+lapsed,450)
-            
-            render.setMaterial()
-            --drawHitbox(12+#data.songs+8,100,442.5,512/data.srcx-200,15,function()
-            --end)
-        end
-        
-        if data.requestedBy then
-            render.setFont("DebugFixedSmall")
-            render.setColor(Color(100,100,100,data.playlist))
-            render.drawText(111,4,"Request <= "..data.requestedBy,1)
         end
         
         render.setFont(h1)
         render.setColor(Color(100,100,100))
-        render.drawText(512/data.srcx-25,50,data.author,2)
+        render.drawText(512/data.srcx-25,50,data.song and data.song.author or "",2)
         render.setFont("DermaLarge")
-        render.drawText(512/data.srcx-25,20,data.title,2)
+        render.drawText(512/data.srcx-25,20,data.song and data.song.title or "",2)
         
-        x,y=render.cursorPos(player())
-        
-        if x then
+        if x and !data.lock then
             render.setMaterial(icons["cursor"])
             render.setColor(Color(0,0,0))
             render.drawTexturedRect(x-4.2,y-1,14,14)
             render.setColor(Color(255,255,255))
             render.drawTexturedRect(x-3.2,y,12,12)
         end
-        
-        if !debugging then 
-            return 
-        end
-        
-        for id, hitbox in pairs(hitboxes) do
-            local topLeft=hitbox[1]
-            local bottomRight=hitbox[2]
-            
-            render.setColor(Color(id*3,1,1):hsvToRGB())
-            render.drawLine(topLeft[1],topLeft[2],bottomRight[1],bottomRight[2])
-            render.drawRectOutline(topLeft[1],topLeft[2],bottomRight[1]-topLeft[1],bottomRight[2]-topLeft[2],1)
-        end
     end)
     
-    hook.add("think","cl_hitboxes",function()
-        for i, hitbox in pairs(hitboxes) do
-            if Vector(x,y):withinAABox(hitbox[1],hitbox[2]) then
-                if !hitbox[4] then
-                    hitbox[4]=true
-                    
-                    if hitbox[3] then
-                        hook.add("inputPressed","hitId_"..i,function(key)
-                            if key==15 then
-                                hitbox[3]()
-                                return
-                            end
-                        end)
-                    end
-                    
-                    for ii=i+1, #hitboxes do
-                        hook.remove("inputPressed","hitId_"..ii)
-                    end
-                    
-                    return
-                end
-            else
-                if hitbox[4] then
-                    hitbox[4]=false
-                    
-                    hook.remove("inputPressed","hitId_"..i)
-                end
-            end
-        end
-    end)
-    
-    hook.add("mouseWheeled","cl_mouse",function(rotate) --create into temeplate function later, too much text wall here
-        if Vector(x,y):withinAABox(Vector(20,20),Vector(200,41+(math.min(#data.songs,21)-1)*20)) then 
-            data.scrollOffset=math.clamp(data.scrollOffset-rotate,0,#data.songs-21) --may have a bug at a very specific count of folders
+    hook.add("mouseWheeled","cl_mouse",function(delta)
+        if hitboxes and data.songs and Vector(x,y):withinAABox(Vector(20,20),Vector(200,41+(math.min(#data.songs,21)-1)*20)) then 
+            data.scrollOffset=math.clamp(data.scrollOffset-delta,0,#data.songs-21)
             
-            table.empty(hitboxes)
+            hitboxes.clear(2)
             
             return 
         end
