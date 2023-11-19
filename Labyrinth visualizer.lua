@@ -6,7 +6,7 @@ http.get("https://raw.githubusercontent.com/Elias-bff/SF-linker/main/linker.lua?
     
     load({
         "https://raw.githubusercontent.com/Elias-bff/hitbox-lib-SF/main/lib/hitbox_lib.lua",
-        ["https://raw.githubusercontent.com/Elias-bff/SF-linker/main/public%20libs/playlist%20lib.lua"]=function()
+        ["https://raw.githubusercontent.com/Elias-bff/Playlist-SF-LIB/main/playlist%20lib.lua"]=function()
             if CLIENT then
                 data.scrollOffset=0
                 data.scale=32
