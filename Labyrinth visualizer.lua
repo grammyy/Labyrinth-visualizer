@@ -1,15 +1,13 @@
 --@name Labyrinth visualizer
 --@author Elias
        
-version=2.2
+version=2.3
 repo="https://raw.githubusercontent.com/Elias-bff/Labyrinth-visualizer/main/version"
 
 http.get("https://raw.githubusercontent.com/Elias-bff/SF-linker/main/linker.lua?time="..timer.realtime(),function(packet)
     loadstring(packet)()
     
     load({
-        "https://raw.githubusercontent.com/Elias-bff/hitbox-lib-SF/main/lib/hitbox_lib.lua",
-        "https://raw.githubusercontent.com/Elias-bff/SF-linker/main/public%20libs/version%20changelog.lua",
         ["https://raw.githubusercontent.com/Elias-bff/Playlist-SF-LIB/main/playlist%20lib.lua"]=function()
             if CLIENT then
                 data.scrollOffset=0
@@ -29,6 +27,13 @@ http.get("https://raw.githubusercontent.com/Elias-bff/SF-linker/main/linker.lua?
             end
         end
     })
+    
+    if CLIENT then
+        load({
+            "https://raw.githubusercontent.com/Elias-bff/SF-linker/main/public%20libs/version%20changelog.lua",
+            "https://raw.githubusercontent.com/Elias-bff/hitbox-lib-SF/main/lib/hitbox_lib.lua"
+        })
+    end
 end)
 
 if SERVER then
@@ -120,7 +125,7 @@ else
     end
 
     hook.add("render","",function()
-        if !loaded or !data or !hitboxes then
+        if !data or !hitboxes then
             return
         end
 
@@ -251,7 +256,7 @@ else
     end)
     
     hook.add("mouseWheeled","cl_mouse",function(delta)
-        if hitboxes and data.songs and Vector(x,y):withinAABox(Vector(20,20),Vector(200,41+(math.min(#data.songs,21)-1)*20)) then 
+        if data and hitboxes and data.songs and Vector(x,y):withinAABox(Vector(20,20),Vector(200,41+(math.min(#data.songs,21)-1)*20)) then 
             data.scrollOffset=math.clamp(data.scrollOffset-delta,0,#data.songs-21)
             
             hitboxes.clear(2)
