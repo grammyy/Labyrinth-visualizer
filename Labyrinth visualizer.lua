@@ -1,28 +1,30 @@
 --@name Labyrinth visualizer
 --@author Elias
        
+version=2.2
+repo="https://raw.githubusercontent.com/Elias-bff/Labyrinth-visualizer/main/version"
+
 http.get("https://raw.githubusercontent.com/Elias-bff/SF-linker/main/linker.lua?time="..timer.realtime(),function(packet)
     loadstring(packet)()
     
     load({
         "https://raw.githubusercontent.com/Elias-bff/hitbox-lib-SF/main/lib/hitbox_lib.lua",
+        "https://raw.githubusercontent.com/Elias-bff/SF-linker/main/public%20libs/version%20changelog.lua",
         ["https://raw.githubusercontent.com/Elias-bff/Playlist-SF-LIB/main/playlist%20lib.lua"]=function()
             if CLIENT then
                 data.scrollOffset=0
                 data.scale=32
-                data.lines=player()==owner() and 32 or 2
+                data.lines=4
                 data.mag=2000
                 data.extra=true
                 data.rgb=false
                 
                 sndFFT=function(FFT)
-                    for i=1, data.lines do
-                        local ii=math.floor(i)
-                        
-                        iterator[data.lines-(ii-1)]=iterator[data.lines-ii]
+                    for i=0, data.lines do
+                        iterator[data.lines-(i-1)]=iterator[data.lines-i]
                     end
                     
-                    iterator[1]=FFT
+                    iterator[0]=FFT
                 end
             end
         end
@@ -52,9 +54,9 @@ else
         data.scale=math.max(data.scale,1)
     end
     
-    function incrementHitbox(y,id,increments,offset,format,textX,text,decrease)
+    function incrementHitbox(y,id,increments,offset,format,textX,text,int,decrease)
         hitboxes.create(1,id,y,24+offset-1,20,16,function()
-            increment(increments,4,decrease)
+            increment(increments,int,decrease)
         end,function()
             render.setColor(Color(200,200,200,data.playlist))
         end,function()
@@ -80,10 +82,10 @@ else
             render.drawRectOutline(21,25+offset,140,12,1)
             render.drawText(94,24+offset,increments[2],1)
             
-            incrementHitbox(25,id*4-1,increments,offset,format,34,"+"..(format and increments[4]/1000 .."k" or increments[4]))
-            incrementHitbox(25+23,id*4-2,increments,offset,format,34+24,"+"..(format and increments[3]/1000 .."k" or increments[3]))
-            incrementHitbox(19+98,id*4-3,increments,offset,format,34+94,"-"..(format and increments[3]/1000 .."k" or increments[3]),true)
-            incrementHitbox(19+122,id*4-4,increments,offset,format,34+116,"-"..(format and increments[4]/1000 .."k" or increments[4]),true)
+            incrementHitbox(25,id*4-1,increments,offset,format,34,"+"..(format and increments[4]/1000 .."k" or increments[4]),4)
+            incrementHitbox(25+23,id*4-2,increments,offset,format,34+24,"+"..(format and increments[3]/1000 .."k" or increments[3]),3)
+            incrementHitbox(19+98,id*4-3,increments,offset,format,34+94,"-"..(format and increments[3]/1000 .."k" or increments[3]),3,true)
+            incrementHitbox(19+122,id*4-4,increments,offset,format,34+116,"-"..(format and increments[4]/1000 .."k" or increments[4]),4,true)
         end
         
         hitboxes.create(3,id,4.5,y,12,12,function(key)
@@ -116,7 +118,7 @@ else
             render.drawText(24,y-1,info)
         end)
     end
-    
+
     hook.add("render","",function()
         if !loaded or !data or !hitboxes then
             return
@@ -129,7 +131,7 @@ else
         data.timeline=(y and data.time and data.length and !data.lock) and math.clamp(255-Vector(0,y,0):getDistance(Vector(0,470,0))*3+100,0,255) or 0
         data.playlist=(x) and math.clamp(255-Vector(x,0,0):getDistance(Vector(90,0,0))*2+120,0,255) or 0
 
-        for i=1, data.lines do
+        for i=0, data.lines do
             if !iterator[i] then
                 iterator[i]={}
             end
@@ -141,22 +143,25 @@ else
                 render.setColor(data.rgb and Color(timer.realtime()*math.min(data.lines*16,1000)-i*30,1,n/100):hsvToRGB() or Color(n,n,n))
                 
                 if ii>0 then
-                    render.draw3DLine(Vector((ii-1)*10.2/1.28*64/data.scale/data.srcx,512-i*20-(iterator[i][ii-1] or 0)*data.mag-40-(data.timeline/3-60),(i-1)*50),Vector(ii*10.2/1.28*64/data.scale/data.srcx,512-i*20-(iterator[i][ii] or 0)*data.mag-40-(data.timeline/3-60),(i-1)*50))
+                    render.draw3DLine(Vector((ii-1)*10.2/1.28*64/data.scale/data.srcx,512-i*20-(iterator[i][ii+1] or 0)*data.mag-60-(data.timeline/3-60),i*50),Vector(ii*10.2/1.28*64/data.scale/data.srcx,512-i*20-(iterator[i][ii+2] or 0)*data.mag-60-(data.timeline/3-60),i*50))
                 end
-
+                
                 if data.extra and iterator[i+1] then
                     local m=math.clamp(70-(70/data.lines)*i-25,0,70)
                     
                     render.setColor(data.rgb and Color(timer.realtime()*math.min(data.lines*16,1000)-i*30,1,m/100):hsvToRGB() or Color(m,m,m))
-                    render.draw3DLine(Vector(ii*10.2/1.28*64/data.scale/data.srcx,512-i*20-(iterator[i][ii] or 0)*data.mag-40-(data.timeline/3-60),(i-1)*50),Vector(ii*10.2/1.28*64/data.scale/data.srcx,512-i*20-(iterator[math.clamp(i+1,1,data.lines)][ii] or 0)*data.mag-60-(data.timeline/3-60),(i-1)*50+50))
+                    render.draw3DLine(Vector(ii*10.2/1.28*64/data.scale/data.srcx,512-i*20-(iterator[i][ii+2] or 0)*data.mag-60-(data.timeline/3-60),i*50),Vector(ii*10.2/1.28*64/data.scale/data.srcx,512-i*20-(iterator[math.clamp(i+1,1,data.lines)][ii+2] or 0)*data.mag-80-(data.timeline/3-60),i*50+50))
                 end
             end
         end
         
         render.setFont("DermaDefault")
-        render.setColor(Color(110,110,110,data.playlist))
         
-        if data.playlist>0 and !data.lock then
+        if data.playlist>0 and !data.lock and data.songs then
+            render.setColor(Color(0,0,0,math.min(data.playlist,150)))
+            render.drawRectFast(0,0,200,41+(21)*20)
+            
+            render.setColor(Color(110,110,110,data.playlist))
             render.drawLine(20,20,200,20)
             
             for i=1,math.min(#data.songs,21) do
@@ -187,7 +192,7 @@ else
                 render.setFont("DebugFixedSmall")
                 render.setColor(Color(100,100,100,data.playlist))
                 render.drawText(111,4,"Requested <= "..data.sender,1)
-            render.setFont("DermaDefault")
+                render.setFont("DermaDefault")
             end
         end
 
