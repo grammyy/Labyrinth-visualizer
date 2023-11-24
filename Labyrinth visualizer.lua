@@ -1,7 +1,7 @@
 --@name Labyrinth visualizer
 --@author Elias
        
-version=2.3
+version=2.4
 repo="https://raw.githubusercontent.com/Elias-bff/Labyrinth-visualizer/main/version"
 
 http.get("https://raw.githubusercontent.com/Elias-bff/SF-linker/main/linker.lua?time="..timer.realtime(),function(packet)
@@ -31,7 +31,13 @@ http.get("https://raw.githubusercontent.com/Elias-bff/SF-linker/main/linker.lua?
     if CLIENT then
         load({
             "https://raw.githubusercontent.com/Elias-bff/SF-linker/main/public%20libs/version%20changelog.lua",
-            "https://raw.githubusercontent.com/Elias-bff/hitbox-lib-SF/main/lib/hitbox_lib.lua"
+            ["https://raw.githubusercontent.com/Elias-bff/hitbox-lib-SF/main/lib/hitbox_lib.lua"]=function()
+                hitboxes.filter=function(key)
+                    if key==15 then
+                        return true
+                    end
+                end
+            end
         })
     end
 end)
@@ -94,10 +100,6 @@ else
         end
         
         hitboxes.create(3,id,4.5,y,12,12,function(key)
-            if key!=15 then
-                return
-            end
-            
             data[name]=not data[name]
             hitboxes.debug=data.debugging
             
@@ -224,7 +226,7 @@ else
             render.drawText((512/data.srcx)-50,444,string.toHoursMinutesSeconds(data.length-data.time),1)
             
             hitboxes.create(2,1,100,442.5,512/data.srcx-200,15,function(key)
-                if data.snd and key==15 then
+                if data.snd then
                     netSend({
                         time=data.length*((1000/(512/data.srcx-200))*(x-100)/(1024))
                     })
