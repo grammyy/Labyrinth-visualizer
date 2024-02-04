@@ -2,13 +2,13 @@
 --@author Elias
        
 version=2.4
-repo="https://raw.githubusercontent.com/Elias-bff/Labyrinth-visualizer/main/version"
+repo="https://raw.githubusercontent.com/grammyy/Labyrinth-visualizer/main/version"
 
-http.get("https://raw.githubusercontent.com/Elias-bff/SF-linker/main/linker.lua?time="..timer.realtime(),function(packet)
+http.get("https://raw.githubusercontent.com/grammyy/SF-linker/main/linker.lua?time="..timer.realtime(),function(packet)
     loadstring(packet)()
     
     load({
-        ["https://raw.githubusercontent.com/Elias-bff/Playlist-SF-LIB/main/playlist%20lib.lua"]=function()
+        ["https://raw.githubusercontent.com/grammyy/Playlist-SF-LIB/main/playlist%20lib.lua"]=function()
             if CLIENT then
                 data.scrollOffset=0
                 data.scale=32
@@ -30,8 +30,8 @@ http.get("https://raw.githubusercontent.com/Elias-bff/SF-linker/main/linker.lua?
     
     if CLIENT then
         load({
-            "https://raw.githubusercontent.com/Elias-bff/SF-linker/main/public%20libs/version%20changelog.lua",
-            ["https://raw.githubusercontent.com/Elias-bff/hitbox-lib-SF/main/lib/hitbox_lib.lua"]=function()
+            "https://raw.githubusercontent.com/grammyy/SF-linker/main/public%20libs/version%20changelog.lua",
+            ["https://raw.githubusercontent.com/grammyy/hitbox-lib-SF/main/lib/hitbox_lib.lua"]=function()
                 hitboxes.filter=function(key)
                     if key==15 then
                         return true
